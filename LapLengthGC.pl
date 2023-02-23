@@ -32,13 +32,13 @@ Options:
 		-o <string> <out.output file>
 		-n <string> <the name of this sample>
 		-mx <int> <the max overlap length> ${red}dflt = 62$end
-		-mi <int> <the min overlap length> ${red}dflt = 3$end
+		-mi <int> <the min overlap length> ${red}dflt = 0$end
 INFO
 
 die $usage if ($help || !@ins || !$out || !$samp);
 
 if(! defined $min_lap){
-	$min_lap = 3;
+	$min_lap = 0;
 }
 
 if(! defined $max_lap){
@@ -67,8 +67,9 @@ foreach my $file(@ins){
 		last if($tag1 ne $tag && $file =~ /inverted|direct/);
 		$tag1 = $tag;
 
-		my ($seq, $nt, $dist) = (split /\t/,$line)[0,1,2];
-		$seq =~ s/overlap:\s+//g;
+		my ($seq1, $nt, $dist) = (split /\t/,$line)[0,1,2];
+		$seq1 =~ s/overlap:\s+//g;
+		my ($seq) = (split /;/, $seq1)[-1];
 		$nt =~ s/\s+nt//g;
 		chomp $seq;	chomp $nt;
 		my $gc = $seq =~ tr/GCgc//;

@@ -16,10 +16,10 @@ my $end = "\033[0m";
 
 my $homepath = dirname(File::Spec->rel2abs( $0 ));
 $homepath=~s/^\s+|\s+$//g;
-my $find = "$homepath/FindChimeras.pl";
+my $find = "$homepath/FindChimeras.latest.pl";
 die "${red}$find do not exists${end}\n" if(!(-e "$find"));
 
-my ($in, $dir, $prefix, $number, $name, $help);
+my ($in, $dir, $prefix, $number, $name, $ref, $help);
 
 GetOptions
 (
@@ -28,6 +28,7 @@ GetOptions
 	"d|dir=s"=>\$dir,
 	"m|nm=s"=>\$name,
 	"n|num=i"=>\$number,
+	"r|ref=s"=>\$ref,
 	"help|?"=>\$help,
 );
 
@@ -37,9 +38,10 @@ Usage:
 Options:
 		${red}-i <file> <in.input file mem.bam|mem.sam, must not sorted by chromosome>$end
 		-p <string> <the prefix of out.output file> (Default: id)
-		-d <string> <the root directory for store the file of \$name fold, it contains id list and chimera>
+		-d <string> <the root directory for storing the file of \$name fold, it contains id list and chimera>
 		-m <string> <the name of this sample>
 		${red}-n <INT> <the maximal reads id number in one list> (Defaults: 100000)$end
+		-r <string> <the absolute path of genome reference> (dlft: /home/luna/Desktop/database/homo_bwa/hsa.fa)
 INFO
 
 die $usage if ($help || !$in || !$dir || !$name);
@@ -52,14 +54,21 @@ $file=~s/^\s+|\s+$//g;
 
 $in = "$indir/$file";
 
-die "${red}$in !exists$end\n" if(!(-e "$file"));
+die "${red}$in !exists$end\n" if(!(-e "$in"));
 
-if(!(defined $number)){
+if(!(defined $number))
+{
 	$number = 100000;
 }
 
-if(!(defined $prefix)){
+if(!(defined $prefix))
+{
 	$prefix = "id";
+}
+
+if(!(defined $ref))
+{
+	$ref = "/home/luna/Desktop/database/homo_bwa/hsa.fa";
 }
 
 if($in =~ /\.bam$/){
@@ -85,6 +94,8 @@ my %id = ();
 
 my $idnum = 0;
 
+my $bam;
+
 while(my $line = <IN>){
 	chomp $line;
 
@@ -95,6 +106,9 @@ while(my $line = <IN>){
 		my $part = int($idnum/$number) + 1;
 		$split = $part;
 		open OB, "> $dir/$prefix.$name.part.$part" || die $!;
+		`sambamba index -t 20 $bam &` if($bam);
+		$bam = "$dir/$prefix.$name.part.$part.bam";
+		open BAM, " | samtools view -bS --reference $ref --threads 4 -o $bam - " || die $!;
 	}
 
 	if(!exists $id{$F[0]}){
@@ -102,21 +116,24 @@ while(my $line = <IN>){
 		$idnum ++;
 		print OUT "$F[0]\n";
 		print OB "$F[0]\n";
+		print BAM "$line\n";
 	}
 	else{
 		$id{$F[0]} ++;
+		print BAM "$line\n";
 	}
-
-	close OB if($idnum % $number == 0);
 }
 close OUT;
 close IN;
 
 open SH, "> $dir/$name.runFind.sh" || die $!;
-
+print SH "#!/bin/bash\n";
 print "${red}$name have $idnum read, the ids were split to $split part$end\n";
 for my $i(1..$split){
-	print SH "nohup perl $find -i $in -id $dir/$prefix.$name.part.$i -o $dir/${name}.part.${i}.chimera -p 0.2 -r /home/luna/Desktop/database/homo_bwa &> $dir/$name.part.${i}.log &\n";
+	$bam = "$dir/$prefix.$name.part.$i.bam";
+#	`sambamba index -t 20 $bam`;
+	print SH "nohup perl $find -i $dir/$bam -o $dir/${name}.part.${i}.chimera -p 0.2 -r /home/luna/Desktop/database/homo_bwa &> $dir/$name.part.${i}.log &\nsleep 3m\n" if($ref);
+	print SH "nohup perl $find -i $in -id $dir/$prefix.$name.part.$i -o $dir/${name}.part.${i}.chimera -p 0.2 -r /home/luna/Desktop/database/homo_bwa &> $dir/$name.part.${i}.log &\nsleep 3m\n" if(! $ref);
 }
 
 close SH;
