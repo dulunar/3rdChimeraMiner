@@ -12,9 +12,13 @@ The pipeline of the 3<sup>rd</sup>-ChimeraMiner is following as:
 
 ### bioinformatics environment
 [perl](https://www.perl.org) (version: v5.22.1) built for x86_64-linux-gnu-thread-multi
+
 [minimap2](https://github.com/lh3/minimap2) (version: 2.22-r1105-dirty)
+
 [samtools](https://github.com/samtools/samtools) (version: 1.11-5-g0920974), Using htslib 1.11-18-g7f8211c
+
 [sambamba](https://github.com/biod/sambamba) (version: 0.8.0), Using LDC 1.24.0 / DMD v2.094.1 / LLVM11.0.0 / bootstrap LDC - the LLVM D compiler (1.24.0)
+
 [SMRT Link](https://www.pacb.com/support/software-downloads/) (version: 10.2.0.133434)
 
 Install these softwares and add the PATH to the environment PATH, for example:
