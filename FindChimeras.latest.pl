@@ -28,8 +28,8 @@ Options:
 		-i <file> <in.input file>
 		-o <string> <out.output file>
 		-id <string> <the list of QNAMEs splitted for this part> (Optical)
-		${red}-p <float> <the allowed mismatch of overlap sequence> (Default: 0.2)$end
-		${red}-r <directory for storing the reference and each chromosome> <default: /home/luna/Desktop/database/homo_bwa>$end
+		-p <float> <the allowed mismatch of overlap sequence> (Default: 0.2) ${red}Deprecated$end
+		${red}-r <directory for storing the reference and each chromosome> <default: /home/luna/Desktop/database/homo_minimap2>$end
 INFO
 
 die $usage if ($help || !$in || !$out);
@@ -41,7 +41,7 @@ if(!(defined $percent_mis))
 
 if(!(defined $refdir))
 {
-	$refdir = "/home/luna/Desktop/database/homo_bwa";
+	$refdir = "/home/luna/Desktop/database/homo_minimap2";
 }
 
 my $samtools;
@@ -57,7 +57,7 @@ elsif(`which samtools`)
 }
 else
 {
-	die "not samtools in /home/luna/Desktop/Software/samtools/samtools/samtools\n";
+	die "${red}not samtools in your enviroment$end\n";
 }
 
 my %mis = ();
@@ -683,7 +683,7 @@ sub callengthcigar
 
 sub strand_code
 {
-	my $flag = $_[0]; #数组是@_，但是单个参数是$_[0]开始；
+	my $flag = $_[0]; #数组是@_，但是单个参数是$_[0]开始； The array is @_, but the single argument starts with $_[0]
 	chomp $flag;
 	$flag = reverse( sprintf("%b",$flag) );
 	my @tmp = split //, $flag;

@@ -33,20 +33,24 @@ INFO
 die $usage if ($help || !$in || !$out);
 open IA, " $in " || die $!;
 
-if(!(defined $outdir)){
+if(!(defined $outdir))
+{
 	$outdir = dirname $in;
 	chomp $outdir;
 	$outdir=~s/^\s+|\s+$//g;
 }
+
 my $file = basename $in;
 my $samp = (split /\./, $file)[0];
 
-if(!(defined $step_length)){
+if(!(defined $step_length))
+{
 	$step_length = 5;
 }
 
 my %hash=();
-while(my $a=<IA>){
+while(my $a=<IA>)
+{
 	my $b=<IA>;
 	my $c=<IA>;
 	my $d=<IA>;
@@ -55,15 +59,23 @@ while(my $a=<IA>){
 	chomp $b;
 	chomp $c;
 	chomp $d;
+
+	my @B = split /\t/, $b;
+	my @C = split /\t/, $c;
+
 	my @F = split /\t/, $d;
 	my ($lap) = $F[0] =~ /overlap: (.*)/;
 	my ($len) = $F[1] =~ /(\d+) nt/;
 	my ($dil) = $F[2] =~ /distance: (.*) nt/;
-	my $dis = int(abs($dil)/$step_length);
-	if(exists $hash{$len}{$dis}){
+	#$dil = ($dil == $B[-1] - $C[2] - $len) ? $dil : $B[-1] - $C[2] - $len;
+	my $dis = int(abs($dil) / $step_length);
+
+	if(exists $hash{$len}{$dis})
+	{
 		$hash{$len}{$dis} ++;
 	}
-	else{
+	else
+	{
 		$hash{$len}{$dis} = 1;
 	}
 }
@@ -72,12 +84,14 @@ close IA;
 my %out = ();
 my $head = "distance";
 my $max = int(10000/$step_length);
-open OA,"> $outdir/$out.dis.$step_length.txt" || die $!;
-foreach my $len(sort {$a<=>$b} keys %hash){
+foreach my $len(sort {$a<=>$b} keys %hash)
+{
 	$head .= "\t$len";
-	foreach my $dis(0..$max){
+	foreach my $dis(0..$max)
+	{
 		my $aa = (!exists $hash{$len}{$dis}) ? 0 : $hash{$len}{$dis};
-		if(!exists $out{$dis}){
+		if(!exists $out{$dis})
+		{
 			$out{$dis} = $aa;
 		}
 		else{
@@ -86,12 +100,15 @@ foreach my $len(sort {$a<=>$b} keys %hash){
 	}
 }
 
+open OA,"> $outdir/$out.dis.$step_length.txt" || die $!;
 print OA "$head\tAllLap\n";
-foreach my $dis(sort {$a<=>$b} keys %out){
+foreach my $dis(sort {$a<=>$b} keys %out)
+{
 	chomp $out{$dis};
 	my @F = split /\t/, $out{$dis};
 	my $sum = 0;
-	foreach my $i(@F){
+	foreach my $i(@F)
+	{
 		$sum += $i;
 	}
 	my $tmp = int($sum);

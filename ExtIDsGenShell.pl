@@ -19,7 +19,7 @@ $homepath=~s/^\s+|\s+$//g;
 my $find = "$homepath/FindChimeras.latest.pl";
 die "${red}$find do not exists${end}\n" if(!(-e "$find"));
 
-my ($in, $dir, $prefix, $number, $name, $ref, $help);
+my ($in, $dir, $prefix, $number, $name, $ref, $sn, $help);
 
 GetOptions
 (
@@ -29,6 +29,7 @@ GetOptions
 	"m|nm=s"=>\$name,
 	"n|num=i"=>\$number,
 	"r|ref=s"=>\$ref,
+	"sn=i"=>\$sn,
 	"help|?"=>\$help,
 );
 
@@ -41,7 +42,8 @@ Options:
 		-d <string> <the root directory for storing the file of \$name fold, it contains id list and chimera>
 		-m <string> <the name of this sample>
 		${red}-n <INT> <the maximal reads id number in one list> (Defaults: 100000)$end
-		-r <string> <the absolute path of genome reference> (dlft: /home/luna/Desktop/database/homo_bwa/hsa.fa)
+		-r <string> <the absolute path of genome reference> (dlft: /home/luna/Desktop/database/homo_minimap2/hsa.fa)
+		-sn <int> <decide whether to run the later analysis according to the split of the bam file, ${red}recommend set to 1${end}> (default: 1)
 INFO
 
 die $usage if ($help || !$in || !$dir || !$name);
@@ -68,11 +70,55 @@ if(!(defined $prefix))
 
 if(!(defined $ref))
 {
-	$ref = "/home/luna/Desktop/database/homo_bwa/hsa.fa";
+	$ref = "/home/luna/Desktop/database/homo_minimap2/hsa.fa";
+}
+
+die "${red}$ref !exists$end\n" if(!(-e "$ref"));
+
+my $refdir = dirname(File::Spec->rel2abs( $ref ));
+$refdir=~s/^\s+|\s+$//g;
+
+if(!(defined $sn))
+{
+	$sn = 1;
+}
+
+my $samtools;
+if( -e "/home/luna/Desktop/Software/samtools/samtools/samtools" )
+{
+	$samtools = "/home/luna/Desktop/Software/samtools/samtools/samtools";
+	$samtools=~s/^\s+|\s+$//g;
+}
+elsif(`which samtools`)
+{
+	$samtools = `which samtools`;
+	chomp $samtools;
+	$samtools=~s/^\s+|\s+$//g;
+}
+else
+{
+	die "${red}not samtools in your enviroment$end\n";
+}
+
+my $sambam;
+if(-e "/home/luna/Desktop/Software/sambamba/build/sambamba")
+{
+	$sambam = "/home/luna/Desktop/Software/sambamba/build/sambamba";
+	$sambam=~s/^\s+|\s+$//g;
+}
+elsif(`which sambamba`)
+{
+	$sambam = `which sambamba`;
+	chomp $sambam;
+	$sambam=~s/^\s+|\s+$//g;
+}
+else
+{
+	die "${red}not sambamba in your enviroment$end\n";
 }
 
 if($in =~ /\.bam$/){
-	open IN, "samtools view -@ 3 $in |" || die $!;
+	open IN, "$samtools view -@ 3 $in |" || die $!;
 }
 elsif($in =~ /\.sam\.gz$/){
 	open IN, "gzip -dc $in |" || die $!;
@@ -106,9 +152,9 @@ while(my $line = <IN>){
 		my $part = int($idnum/$number) + 1;
 		$split = $part;
 		open OB, "> $dir/$prefix.$name.part.$part" || die $!;
-		`sambamba index -t 20 $bam &` if($bam);
+		`$sambam index -t 20 $bam &` if($bam);
 		$bam = "$dir/$prefix.$name.part.$part.bam";
-		open BAM, " | samtools view -bS --reference $ref --threads 4 -o $bam - " || die $!;
+		open BAM, " | $samtools view -bS --reference $ref --threads 10 -o $bam - " || die $!;
 	}
 
 	if(!exists $id{$F[0]}){
@@ -127,13 +173,16 @@ close OUT;
 close IN;
 
 open SH, "> $dir/$name.runFind.sh" || die $!;
-print SH "#!/bin/bash\n";
-print "${red}$name have $idnum read, the ids were split to $split part$end\n";
+#print SH "#!/bin/bash\n";
+
+print "${red}$name have $idnum read, the ids were split to $split part, complete this step$end\n";
+
 for my $i(1..$split){
 	$bam = "$dir/$prefix.$name.part.$i.bam";
 #	`sambamba index -t 20 $bam`;
-	print SH "nohup perl $find -i $dir/$bam -o $dir/${name}.part.${i}.chimera -p 0.2 -r /home/luna/Desktop/database/homo_bwa &> $dir/$name.part.${i}.log &\nsleep 3m\n" if($ref);
-	print SH "nohup perl $find -i $in -id $dir/$prefix.$name.part.$i -o $dir/${name}.part.${i}.chimera -p 0.2 -r /home/luna/Desktop/database/homo_bwa &> $dir/$name.part.${i}.log &\nsleep 3m\n" if(! $ref);
+	print SH "#!/bin/bash\n";
+	print SH "nohup perl $find -i $bam -o $dir/${name}.part.${i}.chimera -r $refdir &> $dir/$name.part.${i}.log &\nsleep 5m\n" if($sn);
+	print SH "nohup perl $find -i $in -id $dir/$prefix.$name.part.$i -o $dir/${name}.part.${i}.chimera -r /home/luna/Desktop/database/homo_minimap2 &> $dir/$name.part.${i}.log &\nsleep 3m\n" if(! $sn);
 }
 
 close SH;
@@ -143,5 +192,5 @@ die "${red}$dir/$name.runFind.sh is empty, Please Check${end}\n" if(!(-s "$dir/$
 if(-s "$dir/$name.runFind.sh"){
 	print "${red}NOTICE: chmod +x $dir/$name.runFind.sh${end}\n";
 	`chmod +x $dir/$name.runFind.sh`;
-	print "${red}NOTICE: Want start. just run the command \" $dir/$name.runFind.sh \"${end}\n";
+	print "${red}NOTICE: Want to find chimeras, just run the command \" $dir/$name.runFind.sh \" for starting${end}\n";
 }

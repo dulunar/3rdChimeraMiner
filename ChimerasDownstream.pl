@@ -19,20 +19,24 @@ Usage: perl $0
 ${red}For Extracting, transformating, and getinfo of chimeras.$end
 
 	-d <string> <the directory of all chimeras file>
+	-od <string> <the directory for saving the results> <dflt = \$dir/chimeras_analysis_lap(the min overlap length)$end>
 	-n <string> <the name of this sample>
-	-L <string> <min length of segment> <dflt = 50>
+	-L <INT> <min length of segment> <dflt = 50>
+	-p <INT> <the min overlap length> <dflt = 3>
 	-s <INT> <the smallest distance of two segment> <dflt = 25>
 	-b <INT> <the biggest distance of two segment> <dflt = 10000>
 
 Example: ${red}perl $0 -d /home/luna/work/ThirdChimera/0907data/5e.2 -n 5e.2 -L 50 -s 25 -b 10000$end\n";
 
-my ($dir, $name, $minLen, $help, $smd, $bgd);
+my ($dir, $name, $minLen, $help, $molpl, $smd, $bgd, $outdir);
 
 GetOptions(
 	'd=s'		=>	\$dir,
+	'od=s'		=>	\$outdir,
 	'help|?'	=>	\$help,
-	'L=s'		=>	\$minLen,
+	'L=i'		=>	\$minLen,
 	'n=s'		=>	\$name,
+	'p=i'		=>	\$molpl,
 	's=i'		=>	\$smd,
 	'b=i'		=>	\$bgd,
 );
@@ -43,12 +47,25 @@ if(!(defined $minLen)){
 	$minLen = 50;
 }
 
+if(!(defined $molpl)){
+	$molpl = 2;
+}
+
 if(!(defined $smd)){
 	$smd = 25;
 }
 
 if(!(defined $bgd)){
 	$bgd = 10000;
+}
+
+if(!(defined $outdir)){
+	if($molpl == 3){
+		$outdir = "$dir/chimeras_analysis_lap${molpl}";
+	}
+	else{
+		$outdir = "$dir/chimeras_analysis_lap${molpl}";
+	}
 }
 
 my $split = 0;
@@ -58,15 +75,20 @@ if(-s "$dir/$name.part.1.chimera"){
 
 die "${red}$dir/$name.part.1.chimera !exists$end\n" if($split == 0);
 
-`mkdir -p $dir/chimeras_analysis` if(!(-d "$dir/chimeras_analysis"));
-my $out = "$dir/chimeras_analysis/$name.error.txt";
-my $normal = "$dir/chimeras_analysis/$name.normal.txt";
+`mkdir -p $outdir` if(!(-d "$outdir"));
+
+my $out = "$outdir/$name.error.txt";
+my $normal = "$outdir/$name.normal.txt";
+
 open OUT, "> $out" || die $!;
 open NM, "> $normal" || die $!;
 
-open OT,"> $dir/chimeras_analysis/$name.TransFormat.txt" || die $!;
-open OD,"> $dir/chimeras_analysis/$name.direct" || die $!;
-open OV,"> $dir/chimeras_analysis/$name.inverted" || die $!;
+open OT,"> $outdir/$name.TransFormat.txt" || die $!;
+
+open OD,"> $outdir/$name.direct" || die $!;
+open OV,"> $outdir/$name.inverted" || die $!;
+
+open OI,"> $outdir/$name.chimera.id" ||die $!;
 
 my ($invert, $direct) = (0) x 2;
 my ($La, $Lb, $Lc, $Ld) = (0) x 4;
@@ -131,9 +153,10 @@ for my $i (1..$split){
 			($seg, $lap, $dis, $chr, $str, $gstart, $gend, $rstart, $rend, $segseq) = split /\t/, $line;
 			if($id eq $id1){
 				$tran ++;
-				my ($seqp, $lenp) = $lap =~ /(.*):(.*)nt/;
+				my ($obas, $fseqp, $ref_f, $lseqp, $ref_l, $seqp, $lenp) = $lap =~ /(.*):(.*);(.*):(.*);(.*):(.*):(.*)nt/;
 
-				my $trans = "$id:${length}nt\t$seg1->$seg\n$chr1\t$str1\t$gstart1\t -> $segseq1 -> \t$gend1\n$chr\t$str\t$gstart\t -> $segseq  -> \t$gend\noverlap: $seqp\t$lenp nt\tdistance: $dis nt\nstart ${rstart1}->${rend1}:${rstart}->${rend} end\n\n";
+				#$dis = $gend1 - $gstart - $lenp;
+				my $trans = "$id:${length}nt\t$seg1->$seg\n$chr1\t$str1\t$gstart1\t -> $segseq1 -> \t$gend1\n$chr\t$str\t$gstart\t -> $segseq  -> \t$gend\noverlap: $obas;$fseqp:$ref_f;$lseqp:$ref_l;$seqp\t$lenp nt\tdistance: $dis nt\nstart ${rstart1}->${rend1}:${rstart}->${rend} end\n\n";
 
 				my $len1 = length($segseq1);
 				my $len = length($segseq);
@@ -147,15 +170,20 @@ for my $i (1..$split){
 					elsif( abs($dis) > $bgd && abs($dis) > $smd ){
 						print OUT "$trans";
 					}
-					elsif( abs($lenp) <= 2 || $lenp eq "" ){
+					elsif( abs($lenp) < $molpl || $lenp eq "" ){
 						print OUT "$trans";
 					}
+					#	elsif($rstart - $rend1 > 50)
+					#{
+					#	print OUT "$trans";
+					#}
 					else{
 						print NM "$trans";
 
 						if(!exists $hash{$id}){
 							$hash{$id} = 1;
 							$read ++;
+							print OI "$id\n";
 						}
 						else{
 							$hash{$id} ++;
@@ -207,6 +235,15 @@ close OUT;
 close OT;
 close OV;
 close OD;
+close OI;
+close NM;
+
+open OO,"> $outdir/$name.chimera.id.times" ||die $!;
+
+foreach my $id(keys %hash){
+	print OO "$id\t$hash{$id}\n";
+}
+close OO;
 
 print "Title\t+-\t-+\t++\t--\tInvertChimera\tDirectChimera\tReadsNumber\tChimericSite\tTotalLengthofReads\n";
 print "$name\t$La\t$Lb\t$Lc\t$Ld\t$invert\t$direct\t$read\t$chimera_site\t$len_total\n";

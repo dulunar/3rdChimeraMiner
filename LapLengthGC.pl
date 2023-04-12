@@ -37,11 +37,13 @@ INFO
 
 die $usage if ($help || !@ins || !$out || !$samp);
 
-if(! defined $min_lap){
+if(! defined $min_lap)
+{
 	$min_lap = 0;
 }
 
-if(! defined $max_lap){
+if(! defined $max_lap)
+{
 	$max_lap = 62;
 }
 
@@ -52,42 +54,64 @@ my %statgc;
 
 my $tag;
 my $tag1;
-foreach my $file(@ins){
+foreach my $file(@ins)
+{
 	chomp $file;
 	open IN,"$file" || die $!;
-	while(my $a = <IN>){
-		my $b=<IN>; my $c=<IN>;
-		my $line=<IN>; my $d=<IN>; my $e=<IN>;
+	while(my $a = <IN>)
+	{
+		my $b=<IN>;
+		my $c=<IN>;
+		my $line=<IN>;
+		my $d=<IN>;
+		my $e=<IN>;
 		chomp $line;
 		my @F = split /\t/, $b;
 		my @R = split /\t/, $c;
+		
 		$tag = ($F[1] ne $R[1]) ? "I" : "D";
-		if(!$tag1){$tag1 = $tag;}
+		
+		if(!$tag1)
+		{
+			$tag1 = $tag;
+		}
 
 		last if($tag1 ne $tag && $file =~ /inverted|direct/);
+
 		$tag1 = $tag;
 
 		my ($seq1, $nt, $dist) = (split /\t/,$line)[0,1,2];
 		$seq1 =~ s/overlap:\s+//g;
-		my ($seq) = (split /;/, $seq1)[-1];
+		chomp $nt;
 		$nt =~ s/\s+nt//g;
-		chomp $seq;	chomp $nt;
+
+		my ($seq) = (split /;/, $seq1)[-1];
+		chomp $seq;
+		$seq =~ s/\s+nt//g;
+
 		my $gc = $seq =~ tr/GCgc//;
-		if(exists $number{$nt}){
+
+		if(exists $number{$nt})
+		{
 			$number{$nt} ++ ;
 			$statgc{$nt} += $gc;
 		}
-		else{
+		else
+		{
 			$number{$nt} = 1;
 			$statgc{$nt} = $gc;
 		}
 	}
 	close IN;
-	if($file !~ /inverted|direct/){$tag = "T";}
+	if($file !~ /inverted|direct/)
+	{
+		$tag = "T";
+	}
 }
 
 print OUT "LapLength-$tag\tNumber-${samp}\tAll_Bases\tGC_Bases\t%GC-${samp}\n";
-foreach my $nt ($min_lap..$max_lap){
+foreach my $nt ($min_lap..$max_lap)
+{
 	$number{$nt} = 0 if(!exists $number{$nt});
 	$statgc{$nt} = 0 if(!exists $statgc{$nt});
 	my $all_nt = $number{$nt}*$nt;
