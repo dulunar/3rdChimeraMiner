@@ -5,7 +5,7 @@ Exploration of whole genome amplification generated chimeric sequences in long-r
 
 The pipeline of the 3<sup>rd</sup>-ChimeraMiner is following as:
 
-![pipeline.3rd-ChimeraMiner](https://raw.githubusercontent.com/dulunar/dulunar.github.io/master/images/pipeline.3rd-ChimeraMiner.png)
+<img src="https://raw.githubusercontent.com/dulunar/dulunar.github.io/master/images/pipeline.3rd-ChimeraMiner.png" alt="pipeline.3rd-ChimeraMiner" style="zoom:50%;" />
 
 
 ## Dependencies
