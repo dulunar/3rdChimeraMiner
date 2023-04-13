@@ -12,7 +12,8 @@ samp=example
 
 while :
 do
-	if ps xu | grep perl | grep FindChimeras.latest.pl | grep ${samp} | tail -1
+	psi=`ps xu | grep perl | grep FindChimeras.latest.pl | grep ${samp} | tail -1`
+	if [[ $psi ]]
 	then
 		sleep 600
 	else
