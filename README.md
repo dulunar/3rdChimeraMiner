@@ -94,7 +94,11 @@ In addition, minimap2 can align DNA sequences against the reference genome seque
 
 
 ## Example, Workflow of 3<sup>rd</sup>-ChimeraMiner
-[The folder contains an example dataset and shells](https://github.com/dulunar/3rdChimeraMiner/tree/master/exampledata). It turns out that all the scripts are running. You can check out how to use the pipeline. 
+[The folder contains test running shell scripts](https://github.com/dulunar/3rdChimeraMiner/tree/master/exampledata). It turns out that all the scripts are running. You can check out how to use the pipeline. 
+
+Before run the shell script, we need to download the bigger bam file and 'bam.pbi' file into the 'exampledata' folder, the download link of the example dataset is https://pan.seu.edu.cn:443/link/74E6F25A348813990FD47C480009C4D8 . Because of the dataset file is too big to upload directly to the GitHub.
+
+If the link is expired, please do not hesitate to contact me directly by [email](nlu@seu.edu.cn).
 
 In this folder, just run workstep.sh first, this shell will generate bam file and chimera's files. When all works in workstep.sh finished, then run filterstep.sh, this shell will deal with the chimera's files and count.
 
@@ -125,7 +129,7 @@ minimap2 -Y -t 60 -ax map-hifi $ref --cs --MD $samp.ccs.fq.gz | samtools view -S
 This step was performed by using the script ` ExtIDsGenShell.pl`. It uses an aligned bam file as the input file. First, splitting the bam file into multiple bam files, each bam file contains "$number" reads id (default was set to 100000). Then, generate a shell script for running the 3<sup>rd</sup>-ChimeraMiner.
 
 ```shell
-perl $dir/ExtIDsGenShell.pl -i $samp.bam -d $dir/exampledata/result -m $samp -n 50000 -r $ref -sn 1
+perl $dir/ExtIDsGenShell.pl -i $samp.bam -d $dir/exampledata/result -m $samp -n 10000 -r $ref -sn 1
 
 # after finished the above process
 cd $dir/exampledata/result/$samp
