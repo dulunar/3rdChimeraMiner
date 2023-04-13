@@ -129,7 +129,11 @@ minimap2 -Y -t 60 -ax map-hifi $ref --cs --MD $samp.ccs.fq.gz | samtools view -S
 This step was performed by using the script ` ExtIDsGenShell.pl`. It uses an aligned bam file as the input file. First, splitting the bam file into multiple bam files, each bam file contains "$number" reads id (default was set to 100000). Then, generate a shell script for running the 3<sup>rd</sup>-ChimeraMiner.
 
 ```shell
-perl $dir/ExtIDsGenShell.pl -i $samp.bam -d $dir/exampledata/result -m $samp -n 10000 -r $ref -sn 1
+# Test for the small bam file in exampledata folder
+perl $dir/ExtIDsGenShell.pl -i $samp.bam -d $dir/exampledata/result -m $samp -n 5000 -r $ref -sn 1
+
+# or Test for the bigger bam file downloaded from `pan.seu.edu.cn`
+perl $dir/ExtIDsGenShell.pl -i $samp.bam -d $dir/exampledata/result -m $samp -n 20000 -r $ref -sn 1
 
 # after finished the above process
 cd $dir/exampledata/result/$samp

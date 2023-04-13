@@ -24,7 +24,7 @@ minimap2 -Y -t 60 -a $mmi --cs --MD example.ccs.fq.gz | samtools view -Sb -@ 4 -
 # minimap2 -Y -t 60 -ax map-hifi $ref --cs --MD example.ccs.fq.gz | samtools view -Sb -@ 4 -o example.bam
 
 # step 3, Split the bam file and generate a shell script to run
-perl $sdir/ExtIDsGenShell.pl -i example.bam -d $dir/result -m example -n 50000 -r $ref -sn 1
+perl $sdir/ExtIDsGenShell.pl -i example.bam -d $dir/result -m example -n 2000 -r $ref -sn 1
 
 # step4, Run the shell script, when search the overlap. We recommended to split the shell scrip and run them independently.
 cd $dir/result/example
