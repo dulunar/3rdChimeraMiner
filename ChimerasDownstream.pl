@@ -167,7 +167,7 @@ for my $i (1..$split){
 					if ($len < $minLen || $len1 < $minLen){
 						print OUT "$trans";
 					}
-					elsif( abs($dis) > $bgd && abs($dis) > $smd ){
+					elsif( abs($dis) > $bgd && abs($dis) < $smd ){
 						print OUT "$trans";
 					}
 					elsif( abs($lenp) < $molpl || $lenp eq "" ){
