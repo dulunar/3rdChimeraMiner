@@ -117,14 +117,19 @@ else
 	die "${red}not sambamba in your enviroment$end\n";
 }
 
+my $header = "${in}.header.sam";
+
 if($in =~ /\.bam$/){
 	open IN, "$samtools view -@ 3 $in |" || die $!;
+	`$samtools view -H $in > $header`;
 }
 elsif($in =~ /\.sam\.gz$/){
 	open IN, "gzip -dc $in |" || die $!;
+	`gzip -dc $in | head -n 10000 | grep "^@" > $header`;
 }
 else{
 	open IN, "$in |" || die $!;
+	`head -n 10000 $in | grep "^@" > $header`;
 }
 
 if(!(-e "$dir/$name")){
@@ -141,6 +146,9 @@ my %id = ();
 my $idnum = 0;
 
 my $bam;
+my $sam = "NA";
+
+#$samtools = "/home/luna/Desktop/Software/samtools/samtools-1.8/samtools";
 
 while(my $line = <IN>){
 	chomp $line;
@@ -149,12 +157,17 @@ while(my $line = <IN>){
 	my @F = split /\t/, $line;
 
 	if($idnum % $number == 0 && !exists $id{$F[0]}){
+		close BAM;
 		my $part = int($idnum/$number) + 1;
 		$split = $part;
 		open OB, "> $dir/$prefix.$name.part.$part" || die $!;
-		`$sambam index -t 20 $bam &` if($bam);
+		# `$sambam index -t 20 $bam &` if($bam);
+
+		`$samtools view -h -Sb --reference $ref --threads 10 -o $bam $sam && rm -rf $sam &` if(-e $sam && $bam);
 		$bam = "$dir/$prefix.$name.part.$part.bam";
-		open BAM, " | $samtools view -bS --reference $ref --threads 10 -o $bam - " || die $!;
+		$sam = "$dir/$prefix.$name.part.$part.sam";
+		`cp $header $sam`;
+		open BAM, " >> $sam" || die $!;
 	}
 
 	if(!exists $id{$F[0]}){
@@ -171,6 +184,8 @@ while(my $line = <IN>){
 }
 close OUT;
 close IN;
+
+`$samtools view -h -Sb --reference $ref --threads 10 -o $bam $sam && rm -rf $sam &` if(-e $sam && $bam);
 
 open SH, "> $dir/$name.runFind.sh" || die $!;
 #print SH "#!/bin/bash\n";
