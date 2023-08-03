@@ -300,3 +300,4 @@ We will be pleased to address any question or concern you may have with the 3<su
 
 ## Citing 3<sup>rd</sup>-ChimeraMiner
 
+Lu, N., Qiao, Y., An, P., Luo, J., Bi, C., Li, M., Lu, Z., & Tu, J. Exploration of whole genome amplification generated chimeric sequences in long-read sequencing data, Briefings in Bioinformatics, 2023, bbad275, https://doi.org/10.1093/bib/bbad275.
